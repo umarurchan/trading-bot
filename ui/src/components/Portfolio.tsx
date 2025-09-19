@@ -1,4 +1,3 @@
-import React from 'react';
 import Card from './Card';
 import type { Token } from '../types';
 import { RefreshCw, ArrowLeftRight, Target } from 'lucide-react';

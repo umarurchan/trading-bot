@@ -10,8 +10,8 @@ import ProfitNotice from './components/ProfitNotice';
 import type { Stats, StrategyKey, Token, Trade } from './types';
 
 export default function App() {
-	const [connected, setConnected] = useState(false);
-	const [address, setAddress] = useState('0x886…bda9');
+	const [connected] = useState(false);
+	const [address] = useState('0x886…bda9');
 	const [botActive, setBotActive] = useState(false);
 	const [strategy, setStrategy] = useState<StrategyKey>('arbitrage');
 	const [token, setToken] = useState('GUSDC');
