@@ -37,6 +37,15 @@ app.post('/api/wallet/connect', (req: Request, res: Response) => {
 	res.json({ ok: true });
 });
 
+app.post('/api/bot/start', (req: Request, res: Response) => {
+	const { amount } = req.body ?? {};
+	if (!amount || Number.isNaN(Number(amount))) {
+		return res.status(400).json({ error: 'valid amount required' });
+	}
+	pushLog({ level: 'info', ts: new Date().toISOString(), msg: `Bot start requested with amount: ${amount}` });
+	res.json({ ok: true });
+});
+
 function startServer(): void {
 	if (io) return; // already started
 	io = new Server(server, { cors: { origin: '*' } });
