@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import { z } from 'zod';
 import { GSwap, PrivateKeySigner } from '@gala-chain/gswap-sdk';
+import { Log } from './server.js';
 const EnvSchema = z.object({
     GALA_PRIVATE_KEY: z.string().min(64).optional(),
     GALA_WALLET_ADDRESS: z.string().min(4).optional(),
@@ -21,10 +22,13 @@ async function tick() {
         const outToken = 'GALA|Unit|none|none';
         const amount = 10;
         const quote = await gswap.quoting.quoteExactInput(inToken, outToken, amount);
-        console.log(`Quote: ${amount} ${inToken} -> ~${quote.outTokenAmount.toString()} ${outToken} on fee tier ${quote.feeTier}`);
+        const line = `Quote: ${amount} ${inToken} -> ~${quote.outTokenAmount.toString()} ${outToken} on fee tier ${quote.feeTier}`;
+        console.log(line);
+        Log.info(line);
     }
     catch (err) {
         console.error('Quote error:', err);
+        Log.error(`Quote error: ${String(err)}`);
     }
 }
 async function main() {

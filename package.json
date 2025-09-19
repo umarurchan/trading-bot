@@ -6,8 +6,9 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
-    "start": "node dist/index.js",
-    "dev": "node --loader ts-node/esm src/index.ts",
+    "start": "concurrently \"node dist/server.js\" \"node dist/index.js\"",
+    "dev": "concurrently \"node --loader ts-node/esm src/server.ts\" \"node --loader ts-node/esm src/index.ts\"",
+    "dev:all": "concurrently -c \"blue,green,magenta\" \"node --loader ts-node/esm src/server.ts\" \"node --loader ts-node/esm src/index.ts\" \"cd ui && npm run dev\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -22,14 +23,20 @@
   },
   "homepage": "https://github.com/umarurchan/trading-bot#readme",
   "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
     "@types/node": "^24.5.2",
+    "concurrently": "^9.2.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.2"
   },
   "dependencies": {
     "@gala-chain/gswap-sdk": "^0.0.7",
     "axios": "^1.12.2",
+    "cors": "^2.8.5",
     "dotenv": "^17.2.2",
+    "express": "^5.1.0",
+    "socket.io": "^4.8.1",
     "ws": "^8.18.3",
     "zod": "^4.1.9"
   }
