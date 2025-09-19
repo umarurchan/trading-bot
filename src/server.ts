@@ -3,6 +3,7 @@ import express, { Request, Response } from 'express';
 import http from 'http';
 import cors from 'cors';
 import { Server } from 'socket.io';
+import { fileURLToPath } from 'url';
 
 type LogLine = { level: 'info' | 'error' | 'warn'; ts: string; msg: string };
 
@@ -11,13 +12,13 @@ app.use(cors());
 app.use(express.json());
 
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: '*' } });
+let io: Server | null = null;
 
 const logs: LogLine[] = [];
 function pushLog(line: LogLine): void {
 	logs.push(line);
 	if (logs.length > 500) logs.shift();
-	io.emit('log', line);
+	if (io) io.emit('log', line);
 }
 
 app.get('/api/health', (_req: Request, res: Response) => {
@@ -36,14 +37,22 @@ app.post('/api/wallet/connect', (req: Request, res: Response) => {
 	res.json({ ok: true });
 });
 
-io.on('connection', (socket) => {
-	socket.emit('hello', { ts: new Date().toISOString() });
-});
+function startServer(): void {
+	if (io) return; // already started
+	io = new Server(server, { cors: { origin: '*' } });
+	io.on('connection', (socket) => {
+		socket.emit('hello', { ts: new Date().toISOString() });
+	});
+	const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3001;
+	server.listen(PORT, () => {
+		pushLog({ level: 'info', ts: new Date().toISOString(), msg: `API server listening on :${PORT}` });
+	});
+}
 
-const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3001;
-server.listen(PORT, () => {
-	pushLog({ level: 'info', ts: new Date().toISOString(), msg: `API server listening on :${PORT}` });
-});
+const isMain = fileURLToPath(import.meta.url) === process.argv[1];
+if (isMain) {
+	startServer();
+}
 
 // Simple export to reuse logger from bot
 export const Log = {
@@ -51,4 +60,6 @@ export const Log = {
 	warn: (msg: string) => pushLog({ level: 'warn', ts: new Date().toISOString(), msg }),
 	error: (msg: string) => pushLog({ level: 'error', ts: new Date().toISOString(), msg }),
 };
+
+export { startServer };
 

@@ -3,17 +3,19 @@ import express from 'express';
 import http from 'http';
 import cors from 'cors';
 import { Server } from 'socket.io';
+import { fileURLToPath } from 'url';
 const app = express();
 app.use(cors());
 app.use(express.json());
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: '*' } });
+let io = null;
 const logs = [];
 function pushLog(line) {
     logs.push(line);
     if (logs.length > 500)
         logs.shift();
-    io.emit('log', line);
+    if (io)
+        io.emit('log', line);
 }
 app.get('/api/health', (_req, res) => {
     res.json({ ok: true, time: new Date().toISOString() });
@@ -29,17 +31,27 @@ app.post('/api/wallet/connect', (req, res) => {
     pushLog({ level: 'info', ts: new Date().toISOString(), msg: `Wallet connected: ${address}` });
     res.json({ ok: true });
 });
-io.on('connection', (socket) => {
-    socket.emit('hello', { ts: new Date().toISOString() });
-});
-const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3001;
-server.listen(PORT, () => {
-    pushLog({ level: 'info', ts: new Date().toISOString(), msg: `API server listening on :${PORT}` });
-});
+function startServer() {
+    if (io)
+        return; // already started
+    io = new Server(server, { cors: { origin: '*' } });
+    io.on('connection', (socket) => {
+        socket.emit('hello', { ts: new Date().toISOString() });
+    });
+    const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3001;
+    server.listen(PORT, () => {
+        pushLog({ level: 'info', ts: new Date().toISOString(), msg: `API server listening on :${PORT}` });
+    });
+}
+const isMain = fileURLToPath(import.meta.url) === process.argv[1];
+if (isMain) {
+    startServer();
+}
 // Simple export to reuse logger from bot
 export const Log = {
     info: (msg) => pushLog({ level: 'info', ts: new Date().toISOString(), msg }),
     warn: (msg) => pushLog({ level: 'warn', ts: new Date().toISOString(), msg }),
     error: (msg) => pushLog({ level: 'error', ts: new Date().toISOString(), msg }),
 };
+export { startServer };
 //# sourceMappingURL=server.js.map

@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import { z } from 'zod';
 import { GSwap, PrivateKeySigner } from '@gala-chain/gswap-sdk';
-import { Log } from './server.js';
+import { Log, startServer } from './server.js';
 
 const EnvSchema = z.object({
 	GALA_PRIVATE_KEY: z.string().min(64).optional(),
@@ -38,6 +38,8 @@ async function tick(): Promise<void> {
 async function main(): Promise<void> {
 	console.log('GalaSwap bot starting...');
 	console.log('API base:', env.GS_API_BASE);
+	// Ensure server is started if not already
+	startServer();
 
 	const interval = setInterval(() => {
 		void tick();
