@@ -6,7 +6,7 @@ import { Log, startServer } from './server.js';
 const EnvSchema = z.object({
 	GALA_PRIVATE_KEY: z.string().min(64).optional(),
 	GALA_WALLET_ADDRESS: z.string().min(4).optional(),
-	GS_API_BASE: z.string().url().default('https://swap.gala.com'),
+	GS_API_BASE: z.string().url().optional(),
 	POLL_INTERVAL_MS: z
 		.string()
 		.default('5000')
@@ -17,7 +17,11 @@ const EnvSchema = z.object({
 const env = EnvSchema.parse(process.env);
 
 const signer = env.GALA_PRIVATE_KEY ? new PrivateKeySigner(env.GALA_PRIVATE_KEY) : undefined;
-const gswap = new GSwap({ signer, gatewayBaseUrl: env.GS_API_BASE });
+const gswapOptions: any = { signer };
+if (env.GS_API_BASE) {
+	gswapOptions.gatewayBaseUrl = env.GS_API_BASE;
+}
+const gswap = new GSwap(gswapOptions);
 
 async function tick(): Promise<void> {
 	// Example: quote GUSDC -> GALA for 10 units and log
@@ -37,7 +41,7 @@ async function tick(): Promise<void> {
 
 async function main(): Promise<void> {
 	console.log('GalaSwap bot starting...');
-	console.log('API base:', env.GS_API_BASE);
+	if (env.GS_API_BASE) console.log('API base override:', env.GS_API_BASE);
 	// Ensure server is started if not already
 	startServer();
 

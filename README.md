@@ -8,9 +8,9 @@ Quick start
 - Build and run: npm run build && npm start
 
 Environment
-- GALA_PRIVATE_KEY: hex private key for signing
-- GALA_WALLET_ADDRESS: your GalaChain wallet address (e.g., eth|...)
-- GS_API_BASE: base URL for gSwap API (default: https://swap.gala.com)
+- GALA_PRIVATE_KEY: hex private key for signing (optional for read-only)
+- GALA_WALLET_ADDRESS: your GalaChain wallet address (optional)
+- GS_API_BASE: optional gateway override; leave empty to use SDK defaults
 - POLL_INTERVAL_MS: loop delay in ms (default: 5000)
 
 Warning
