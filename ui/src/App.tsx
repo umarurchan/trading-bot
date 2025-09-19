@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import './App.css'
+import { galaWallet } from './wallet';
 
 function useSocket(url: string) {
 	const socketRef = useRef<WebSocket | null>(null);
@@ -28,10 +29,13 @@ export default function App() {
 			return `${u.protocol}//${u.hostname}:3001`;
 		})()
 	);
+	const tokenApiBase = apiBase.replace('3001', '3001');
 	const wsUrl = useMemo(() => apiBase.replace(/^http/, 'ws') + '/socket.io/?EIO=4&transport=websocket', [apiBase]);
 	const { connected } = useSocket(wsUrl);
 	const [walletAddr, setWalletAddr] = useState('');
 	const [connecting, setConnecting] = useState(false);
+	const [connectedAddr, setConnectedAddr] = useState<string | null>(null);
+	const [balances, setBalances] = useState<any[]>([]);
 	const [logs, setLogs] = useState<{ts:string;level:string;msg:string}[]>([]);
 
 	useEffect(() => {
@@ -60,6 +64,22 @@ export default function App() {
 		return () => sock.close();
 	}, [apiBase]);
 
+	async function connectWithMetaMask() {
+		setConnecting(true);
+		try {
+			const addr = await galaWallet.connect();
+			setConnectedAddr(addr);
+			setWalletAddr(addr);
+			await fetch(apiBase + '/api/wallet/connect', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ address: addr }) });
+			const bals = await galaWallet.fetchBalances(tokenApiBase);
+			setBalances(bals);
+		} catch (e) {
+			alert('Wallet connect failed: ' + (e as Error).message);
+		} finally {
+			setConnecting(false);
+		}
+	}
+
 	return (
 		<div className="min-h-screen bg-gray-50 text-gray-900">
 			<div className="max-w-6xl mx-auto p-4 space-y-4">
@@ -75,12 +95,28 @@ export default function App() {
 							setConnecting(true);
 							try {
 								await fetch(apiBase + '/api/wallet/connect', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ address: walletAddr }) });
+								setConnectedAddr(walletAddr);
+								const bals = await galaWallet.fetchBalances(tokenApiBase).catch(()=>[]);
+								setBalances(bals);
 							} finally {
 								setConnecting(false);
 							}
-						}} className="bg-black text-white px-4 py-2 rounded disabled:opacity-50">{connecting ? 'Connecting...' : 'Connect'}</button>
+						}} className="bg-black text-white px-4 py-2 rounded disabled:opacity-50">{connecting ? 'Connecting...' : 'Use Address'}</button>
+						<button onClick={connectWithMetaMask} className="bg-orange-500 text-white px-4 py-2 rounded">Connect MetaMask</button>
 					</div>
-					<p className="text-xs text-gray-500">GalaChain Wallet connect can be integrated here when available. For now, enter your address to personalize data.</p>
+					{connectedAddr && (<div className="text-sm text-gray-600">Connected: {connectedAddr}</div>)}
+				</section>
+				<section className="bg-white shadow rounded p-4">
+					<h2 className="font-medium mb-2">Balances</h2>
+					<div className="text-sm grid grid-cols-1 md:grid-cols-2 gap-2">
+						{balances.map((b: any, i: number) => (
+							<div key={i} className="border rounded p-2">
+								<div className="font-mono text-xs text-gray-500">{b.classKey?.collection}|{b.classKey?.category}|{b.classKey?.type}|{b.classKey?.additionalKey}</div>
+								<div className="flex justify-between"><span>{b.classKey?.type}</span><span>{b.balance}</span></div>
+							</div>
+						))}
+						{!balances.length && <div className="text-gray-500">No balances loaded</div>}
+					</div>
 				</section>
 				<section className="bg-white shadow rounded p-4">
 					<h2 className="font-medium mb-2">Live Logs</h2>
