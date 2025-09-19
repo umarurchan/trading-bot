@@ -12,6 +12,7 @@
   "dependencies": {
     "@gala-chain/connect": "^2.4.3",
     "class-transformer": "^0.5.1",
+    "lucide-react": "^0.544.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
   },
