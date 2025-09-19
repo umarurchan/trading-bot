@@ -1,24 +1,26 @@
-import { BrowserConnectClient, TokenApi } from '@gala-chain/connect';
+import { BrowserConnectClient } from '@gala-chain/connect';
 
 export class GalaWallet {
-	private client = new BrowserConnectClient();
+	private client: BrowserConnectClient | null = null;
 	public address: string | null = null;
 
+	private ensureClient(): BrowserConnectClient {
+		if (!this.client) {
+			if (!(window as any).ethereum) throw new Error('Ethereum provider not found');
+			this.client = new BrowserConnectClient((window as any).ethereum);
+		}
+		return this.client;
+	}
+
 	async connect(): Promise<string> {
-		this.address = await this.client.connect();
+		const c = this.ensureClient();
+		this.address = await c.connect();
 		return this.address;
 	}
 
 	async disconnect(): Promise<void> {
-		this.client.disconnect();
+		this.client?.disconnect();
 		this.address = null;
-	}
-
-	async fetchBalances(tokenApiBase: string) {
-		if (!this.address) throw new Error('Not connected');
-		const tokenApi = new TokenApi(tokenApiBase, this.client);
-		const resp = await tokenApi.FetchBalances({ owner: this.address as any });
-		return (resp as any).Data ?? [];
 	}
 }
 

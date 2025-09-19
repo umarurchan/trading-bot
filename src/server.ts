@@ -46,6 +46,26 @@ app.post('/api/bot/start', (req: Request, res: Response) => {
 	res.json({ ok: true });
 });
 
+// Simple proxy for GalaChain Token API to avoid browser CORS
+// Configure GATEWAY_BASE in environment, e.g., https://gateway.example.com
+const GATEWAY_BASE = process.env.GATEWAY_BASE?.replace(/\/$/, '') || '';
+app.post('/api/token/:method', async (req: Request, res: Response) => {
+	try {
+		if (!GATEWAY_BASE) return res.status(500).json({ error: 'GATEWAY_BASE not configured' });
+		const method = req.params.method;
+		const url = `${GATEWAY_BASE}/api/asset/token-contract/${method}`;
+		const r = await fetch(url, {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify(req.body ?? {}),
+		});
+		const text = await r.text();
+		res.status(r.status).type('application/json').send(text);
+	} catch (e) {
+		res.status(500).json({ error: 'proxy_failed' });
+	}
+});
+
 function startServer(): void {
 	if (io) return; // already started
 	io = new Server(server, { cors: { origin: '*' } });
